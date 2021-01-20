@@ -1,32 +1,31 @@
 from requests_html import HTML,HTMLSession
 import csv
+import re
 
-def getLinkInfo(url):
+
+def get_link_info(url):
     session = HTMLSession()
     t = session.get(url)
     infoContainer = t.html.find(".bbWrapper")[0]
+    infoContainerText = infoContainer.text
 
-    try:
+    locationPtn = re.compile(r'Location: ?[^\n]+')
+    agePtn = re.compile(r'Age: ?[^\n]+')
+    pricePtn = re.compile(r'Price: ?[^\n]+')
+
+    infosOfInterest = [locationPtn,agePtn,pricePtn]
+    results = []
+
+    for field in infosOfInterest:
         try:
-            location = infoContainer.search("Location: {}<br/>")[0]
-        except TypeError:
-            location = infoContainer.search("Location:{}<br/>")[0]
+            results.append(field.finditer(infoContainerText).__next__().group())
+        except StopIteration:
+            print(infoContainerText)
+            return
 
-        try:
-            age = infoContainer.search("Age: {}<br/>")[0]
-        except TypeError:
-            age = infoContainer.search("Age:{}<br/>")[0]
+    # print(location,age,price)
+    return results
 
-        try:
-            price = infoContainer.search("Price: {}<br/>")[0]
-        except TypeError:
-            price = infoContainer.search("Price:{}<br/>")[0]
-    except TypeError:
-        return []
-
-    return [price,age,location]
-
-    # print(f"{age} for {price} in {location}")
 
 def write_to_CSV(info):
 
@@ -34,38 +33,53 @@ def write_to_CSV(info):
         datafileWriter = csv.writer(dataFile, delimiter=';')
         datafileWriter.writerow(info)
 
-session = HTMLSession()
+
+
+def scape_threads_for_links(url):
+    session = HTMLSession()
+    r = session.get(url)
+    # print(r.html.find("title")[0].text)
+    numberOfPages = r.html.find(".pageNav-page ")[-1].text
+
+    entriesContainer = r.html.find(".structItemContainer")
+    entries = entriesContainer[0].find(".structItem ")
+
+    for entry in entries:
+        entryContainer = entry.find(".structItem-title")[0]
+        title = entryContainer.find("a")[1].text
+        typeOfSale = entryContainer.find("a")[0].text
+        if typeOfSale == "[Reseller]" or typeOfSale == "[Wanted]" or typeOfSale == "[Feeler]":
+            continue
+
+        url = urlGlobal + str(entryContainer.find("a")[1].attrs["href"])
+        linkInfo = get_link_info(url)
+        if linkInfo == None:
+            continue
+
+        info = [title] + linkInfo + [url]
+
+        print(info)
+        # break
+        write_to_CSV(info)
+
+
+
 
 urlParams = "&prefix_id=1&order=thread_fields_price&direction=desc"
-url = "https://carbonite.co.za/index.php?forums/intel_cpu/" + urlParams
+urlThreads = "https://carbonite.co.za/index.php?forums/intel_cpu/"
 urlGlobal = "https://carbonite.co.za"
-r = session.get(url)
-# print(r.html.find("title")[0].text)
 
-entriesContainer = r.html.find(".structItemContainer")
-entries = entriesContainer[0].find(".structItem ")
 
-for entry in entries:
-    entryContainer = entry.find(".structItem-title")[0]
-    title = entryContainer.find("a")[1].text
-    typeOfSale = entryContainer.find("a")[0].text
-    if typeOfSale == "[Reseller]" or typeOfSale == "[Wanted]" or typeOfSale == "[Feeler]"  :
-        continue
-    url = urlGlobal + str(entryContainer.find("a")[1].attrs["href"])
-    # print(url)
-    # print(typeOfSale)
-    # print(f'{title} at {url}')
+session = HTMLSession()
+r = session.get(urlThreads+urlParams)
+numberOfPages = int(r.html.find(".pageNav-page ")[-1].text)
+print(f"Scraping {numberOfPages} pages")
 
-    info = [title] + getLinkInfo(url) + [url]
+for page in range(1,numberOfPages+1):
+    url = f"{urlThreads}page-{str(page)}{urlParams}"
 
-    print(info)
+    print("Scraping: ",url)
+    scape_threads_for_links(url)
 
-    write_to_CSV(info)
-
-# print(r.html.find(".structItem structItem--thread is-prefix1 js-inlineModContainer js-threadListItem-339254"))
-
-# Press the green button in the gutter to run the script.
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-
+# scape_threads_for_links(url)
 
