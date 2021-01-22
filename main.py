@@ -9,16 +9,18 @@ def get_link_info(url):
     infoContainer = t.html.find(".bbWrapper")[0]
     infoContainerText = infoContainer.text
 
-    locationPtn = re.compile(r'Location: ?[^\n]+')
-    agePtn = re.compile(r'Age: ?[^\n]+')
-    pricePtn = re.compile(r'Price: ?[^\n]+')
+    locationPtn = re.compile(r'Location: ?([^\n]+)')
+    agePtn = re.compile(r'Age: ?([^\n]+)')
+    pricePtn = re.compile(r'Price: ?([^\n]+)')
 
     infosOfInterest = [locationPtn,agePtn,pricePtn]
     results = []
 
     for field in infosOfInterest:
         try:
-            results.append(field.finditer(infoContainerText).__next__().group())
+            data = field.finditer(infoContainerText).__next__().group(1)
+            results.append(data)
+
         except StopIteration:
             print(infoContainerText)
             return
@@ -28,12 +30,12 @@ def get_link_info(url):
 
 
 def write_to_CSV(info):
-
-    with open('carboniteDate.csv', mode='a') as dataFile:
-        datafileWriter = csv.writer(dataFile, delimiter=';')
-        datafileWriter.writerow(info)
-
-
+    try:
+        with open('carboniteDate.csv', mode='a',newline='') as dataFile:
+            datafileWriter = csv.writer(dataFile, delimiter=';')
+            datafileWriter.writerow(info)
+    except UnicodeEncodeError:
+        print("UnicodeEncodeError due to emojies. Entry ignored")
 
 def scape_threads_for_links(url):
     session = HTMLSession()
