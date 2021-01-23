@@ -7,26 +7,35 @@ def get_link_info(url):
     session = HTMLSession()
     t = session.get(url)
     infoContainer = t.html.find(".bbWrapper")[0]
+
+    datetimePosted = t.html.find("time")[0].attrs["datetime"]
+    lockedStatusData = t.html.find("blockStatus-message blockStatus-message--locked")
+    if len(lockedStatusData) == 0:
+        lockedStatus = "Open"
+    else:
+        lockedStatus = "Closed"
+
     infoContainerText = infoContainer.text
 
     locationPtn = re.compile(r'Location: ?([^\n]+)')
     agePtn = re.compile(r'Age: ?([^\n]+)')
     pricePtn = re.compile(r'Price: ?([^\n]+)')
+    conditionPtn = re.compile(r'Condition: ?([^\n]+)')
 
-    infosOfInterest = [locationPtn,agePtn,pricePtn]
+    infosOfInterest = [locationPtn, agePtn, pricePtn, conditionPtn]
     results = []
 
     for field in infosOfInterest:
         try:
             data = field.finditer(infoContainerText).__next__().group(1)
             results.append(data)
-
         except StopIteration:
             print(infoContainerText)
             return
 
     # print(location,age,price)
-    return results
+
+    return results + [lockedStatus] + [datetimePosted]
 
 
 def write_to_CSV(info):
@@ -46,6 +55,7 @@ def scape_threads_for_links(url):
     entriesContainer = r.html.find(".structItemContainer")
     entries = entriesContainer[0].find(".structItem ")
 
+
     for entry in entries:
         entryContainer = entry.find(".structItem-title")[0]
         title = entryContainer.find("a")[1].text
@@ -54,6 +64,8 @@ def scape_threads_for_links(url):
             continue
 
         url = urlGlobal + str(entryContainer.find("a")[1].attrs["href"])
+
+
         linkInfo = get_link_info(url)
         if linkInfo == None:
             continue
@@ -63,6 +75,7 @@ def scape_threads_for_links(url):
         print(info)
         # break
         write_to_CSV(info)
+
 
 
 

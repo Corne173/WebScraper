@@ -8,14 +8,22 @@ def get_link_info(url):
     t = session.get(url)
     infoContainer = t.html.find(".bbWrapper")[0]
 
+    datetimePosted = t.html.find("time")[0].attrs["datetime"]
+    lockedStatusData = t.html.find("blockStatus-message blockStatus-message--locked")
+    print(lockedStatusData)
+    if len(lockedStatusData) == 0:
+        lockedStatus = "Open"
+    else:
+        lockedStatus = "Closed"
 
     infoContainerText = infoContainer.text
 
     locationPtn = re.compile(r'Location: ?([^\n]+)')
     agePtn = re.compile(r'Age: ?([^\n]+)')
     pricePtn = re.compile(r'Price: ?([^\n]+)')
+    conditionPtn = re.compile(r'Condition: ?([^\n]+)')
 
-    infosOfInterest = [locationPtn, agePtn, pricePtn]
+    infosOfInterest = [locationPtn, agePtn, pricePtn,conditionPtn]
     results = []
 
     for field in infosOfInterest:
@@ -29,7 +37,7 @@ def get_link_info(url):
     # print(location,age,price)
 
 
-    return results
+    return results + [lockedStatus] + [datetimePosted]
 
     # print(f"{age} for {price} in {location}")
 
