@@ -18,8 +18,12 @@ def get_link_info(url):
     # get the datetime it was posted
     datetimePosted = t.html.find("time")[0].attrs["datetime"]
 
-    lockedStatusData = t.html.find("blockStatus-message blockStatus-message--locked")
-    if len(lockedStatusData) == 0:
+    forumName = t.html.find(".p-breadcrumbs")[0].text.replace("\n","-")
+
+    lockedStatusData = t.html.find(".blockStatus-message")
+    print(len(lockedStatusData))
+
+    if len(lockedStatusData) < 2:
         lockedStatus = "Open"
     else:
         lockedStatus = "Closed"
@@ -46,13 +50,13 @@ def get_link_info(url):
 
     info = [title] + results + [lockedStatus] + [datetimePosted]
     print(info)
-    write_to_CSV(info)
+    write_to_CSV(info,forumName)
     return f"Done scraping {url}"
 
 
-def write_to_CSV(info):
+def write_to_CSV(info,fileName):
     try:
-        with open('carboniteDate.csv', mode='a',newline='') as dataFile:
+        with open(f'{fileName}.csv', mode='a',newline='') as dataFile:
             datafileWriter = csv.writer(dataFile, delimiter=';')
             datafileWriter.writerow(info)
     except UnicodeEncodeError:
@@ -84,42 +88,9 @@ def scape_threads_for_links(url):
 
 
 
-urlParams = "&prefix_id=1&order=thread_fields_price&direction=desc"
-urlThreads = "https://carbonite.co.za/index.php?forums/intel_cpu/"
-urlGlobal = "https://carbonite.co.za"
-
-
+url ="https://carbonite.co.za/index.php?threads/intel-9th-gen-core-i3-9100f-3-60-ghz.343752/"
+# url ="https://carbonite.co.za/index.php?threads/intel-core-i3-8100-3-6ghz.344219/"
 # Script starts
-session = HTMLSession()
-r = session.get(urlThreads+urlParams)
-# Gets the total number of pages
-numberOfPages = int(r.html.find(".pageNav-page ")[-1].text)
-print(f"Scraping {numberOfPages} pages")
+get_link_info( url)
 
-# loops over total pages
-for page in range(1,numberOfPages+1):
-    url = f"{urlThreads}page-{str(page)}{urlParams}"
-
-    print("Scraping: ",url)
-    # gets all the links to each thread
-    threadLinks = scape_threads_for_links(url)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-
-        results = []
-        for url in threadLinks:
-            print("Scraping thread: ",url)
-            # multi threading happens here
-            results.append(executor.submit(get_link_info, url))
-            # sleep for 10ms. Dont want to punish their servers with 30 requests all at once (might get my your IP addr banned)
-            time.sleep(0.01)
-
-        for f in concurrent.futures.as_completed(results):
-            print(f.result())
-
-
-
-
-
-            # scape_threads_for_links(url)
 
