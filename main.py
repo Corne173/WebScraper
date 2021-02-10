@@ -19,12 +19,30 @@ def get_link_info(threadinfo):
     # get the container containing the info of interest
     infoContainer = t.html.find(".bbWrapper")[0]
     # get the datetime it was posted
+    datetimes = t.html.find("time")
     datetimePosted = t.html.find("time")[0].attrs["datetime"]
+    unix_datetimePosted = t.html.find("time")[0].attrs["data-time"]
 
+    messageContainer = t.html.find(".js-replyNewMessageContainer")[0]
+    firstReply = t.html.find(".js-inlineModContainer  ")[1]
+
+    print(firstReply)
+
+    if len(datetimes) > 1:
+        firstResponse = firstReply.find(".u-dt")[0].attrs["datetime"]
+        unix_firstResponse = firstReply.find(".u-dt")[0].attrs["data-time"]
+
+    else:
+        firstResponse = datetimePosted
+        unix_firstResponse = unix_datetimePosted
+        print("No second thread")
+
+    # print(unix_firstResponse,unix_datetimePosted)
+    deltaT_response = int(unix_firstResponse) - int(unix_datetimePosted)
     forumName = t.html.find(".p-breadcrumbs")[0].text.replace("\n","-")
 
     lockedStatusData = t.html.find(".blockStatus-message")
-    print(len(lockedStatusData))
+    # print(len(lockedStatusData))
 
     if len(lockedStatusData) < 2:
         lockedStatus = "Open"
@@ -51,7 +69,7 @@ def get_link_info(threadinfo):
 
     # print(location,age,price)
 
-    info = [title] + results + [ threadinfo["views"],threadinfo["replies"] ,lockedStatus , datetimePosted , url]
+    info = [title] + results + [ threadinfo["views"],threadinfo["replies"] ,lockedStatus , datetimePosted ,firstResponse,deltaT_response, url]
     print(info)
     write_to_CSV(info,forumName)
     return f"Done scraping {url}"
@@ -126,7 +144,7 @@ for page in range(1,numberOfPages+1):
             results.append(executor.submit(get_link_info, thread))
             # sleep for 10ms. Dont want to punish their servers with 30 requests all at once (might get my your IP addr banned)
             time.sleep(0.1)
-            break
+
         for f in concurrent.futures.as_completed(results):
             print(f.result())
-            break
+
