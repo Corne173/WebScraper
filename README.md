@@ -1,10 +1,5 @@
 # Carbonite Webscraper
 
-This project stemmed from a long time desire to get into webscrapping and to gain a competivite edge on a second-hand South African Tech platform called Carbonite.
-Good deals are almost always scatched up within minutes of being posted and requires you to be infornt of your PC every minute of the day; a commitment I cannot always make.
-on the and the best and fastest way to learn a new skill is though project based learning. 
-This is a small weekend pet project that I used to teach me a couple of things:
+This project stemmed from an inspiration from a book called "Automating the boring stuff with Python", a long time desire to get into web scrapping and to gain a competitive edge on a second-hand South African Tech platform called Carbonite. Good deals are almost always snatched up within minutes of being posted and requires you to be informed of your PC every minute; a commitment not everyone can make.
 
-1. The basics of webscraping (without using beautifull soup)
-2. Basics of regular expressions (which is also transferabel to JavaScript)
-3.
+Plus with all the data collected, who knows, there might be some insights to be gained. #DataAnalyitics
